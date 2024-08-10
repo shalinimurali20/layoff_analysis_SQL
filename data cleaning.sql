@@ -85,3 +85,83 @@ SELECT *
 FROM layoffs_dup_removed;
 
 -- Part 2: Standardisation
+-- We will be looking at each column one by one and standardise accordingly
+-- However, in this part, we will not deal with NULL values.
+-- Note: Do not make changes to raw table - layoffs
+
+-- Company 
+SELECT DISTINCT company
+FROM layoffs_dup_removed;
+
+-- There exists whitespaces before and after the name of the comapny
+UPDATE layoffs_dup_removed
+SET company = TRIM(company);
+
+-- Location
+SELECT DISTINCT location
+FROM layoffs_dup_removed
+ORDER BY 1;
+
+-- Industry
+SELECT DISTINCT industry
+FROM layoffs_dup_removed
+ORDER BY 1;
+
+-- Looks like Crypto has 3 different entries - Crypto, CryptoCurrency, Crypto Currency
+UPDATE layoffs_dup_removed
+SET industry = 'Crypto' 
+WHERE industry LIKE 'Crypto%';
+
+-- Total Laid Off
+SELECT total_laid_off
+FROM layoffs_dup_removed;
+
+-- Looks fine except for the NULL values which will be dealt later
+
+-- Percentage Laid Off
+SELECT percentage_laid_off
+FROM layoffs_dup_removed;
+
+-- The datatype for this column is text. Modifying it to Decimal (5,4).
+ALTER TABLE layoffs_dup_removed
+MODIFY COLUMN percentage_laid_off DECIMAL(5,2);
+
+-- Date
+UPDATE layoffs_dup_removed
+SET `date` = str_to_date(`date`,'%m/%d/%Y'); -- YYYY-MM-DD format
+
+SELECT `date`
+FROM layoffs_dup_removed;
+
+-- The datatype for this column is text. Modifying it to date.
+ALTER TABLE layoffs_dup_removed
+MODIFY COLUMN `date` DATE;
+
+-- Stage
+SELECT DISTINCT stage
+FROM layoffs_dup_removed
+ORDER BY 1;
+
+-- Looks fine except for the NULL value which will be dealt later
+
+-- Country
+SELECT DISTINCT country
+FROM layoffs_dup_removed
+ORDER BY 1;
+
+-- There exists two United States with and without a '.'
+SELECT country, TRIM(TRAILING '.' FROM country)
+FROM layoffs_dup_removed
+WHERE country LIKE 'United States%';
+
+UPDATE layoffs_dup_removed
+SET country = TRIM(TRAILING '.' FROM country)
+WHERE country LIKE 'United States%';
+
+-- Funds raised millions
+SELECT funds_raised_millions
+FROM layoffs_dup_removed;
+
+-- Looks fine except for the NULL values which will be dealt later
+
+
