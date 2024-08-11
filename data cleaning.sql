@@ -164,4 +164,107 @@ FROM layoffs_dup_removed;
 
 -- Looks fine except for the NULL values which will be dealt later
 
+-- Part 3: Null Values and Removal of Records/Columns
+SELECT *
+FROM layoffs_dup_removed
+WHERE industry IS NULL;
 
+-- Bally's Interactive has no industry and laid_off details; it is also not possible to populate
+-- data as there exists no other information; however we may employ webscraping to fetch data, but, it is beyond the scope of this project
+-- Given the analysis would be about layoffs, it is okay to remove this record.
+
+DELETE 
+FROM layoffs_dup_removed
+WHERE company LIKE 'Bally%';
+
+SELECT *
+FROM layoffs_dup_removed
+WHERE industry IS NULL OR industry = '';
+
+-- There exists three records with industry being empty. Let's check if we can repopulate the data
+SELECT *
+FROM layoffs_dup_removed
+WHERE company IN ('Airbnb','Carvana','Juul');
+
+-- As atleast one of the rows contain 'industry', we can use it to repopulate data
+
+-- Self Join
+
+UPDATE layoffs_dup_removed t1
+JOIN layoffs_dup_removed t2
+ON t1.company = t2.company
+SET t1.industry = t2.industry
+WHERE (t1.industry = '' OR TRIM(t1.industry) = '') AND t2.industry IS NOT NULL;
+
+-- Doesn't work not sure why
+-- ChatGPT response: Your SQL syntax seems correct for standard SQL usage in MySQL. However, ensure that your database server is not operating with specific configurations that might affect join updates.
+
+-- Changed empty values to NULL
+UPDATE layoffs_dup_removed
+SET industry = NULL 
+WHERE industry = '';
+
+-- Update NULL values to corresponding industry
+UPDATE layoffs_dup_removed t1
+JOIN layoffs_dup_removed t2
+ON t1.company = t2.company
+SET t1.industry = t2.industry
+WHERE t1.industry IS NULL AND t2.industry IS NOT NULL;
+
+SELECT *
+FROM layoffs_dup_removed
+WHERE industry IS NULL;
+
+-- Given the analysis is requires laid off values and percentage laid off, it doesn't make sense 
+-- to have records with empty or NULL values in these columns
+
+SELECT *
+FROM layoffs_dup_removed
+WHERE (total_laid_off IS NULL OR total_laid_off ='')  AND 
+(percentage_laid_off IS NULL);
+
+
+DELETE 
+FROM layoffs_dup_removed
+WHERE (total_laid_off IS NULL OR total_laid_off ='')  AND 
+(percentage_laid_off IS NULL);
+
+-- As we do not have a total or a value through which we can derive either laid off or 
+-- percentage %, we leave it as it is.
+
+SELECT *
+FROM layoffs_dup_removed
+WHERE `date` IS NULL;
+
+-- Blackbaud does not have date entry. But it can still be considered for the analysis.
+
+SELECT *
+FROM layoffs_dup_removed
+WHERE stage IS NULL;
+
+-- Checking if we have any other data to help us repopulate
+SELECT *
+FROM layoffs_dup_removed
+WHERE company IN (SELECT company
+FROM layoffs_dup_removed
+WHERE stage IS NULL);
+
+-- But it can still be considered for the analysis.
+
+SELECT *
+FROM layoffs_dup_removed
+WHERE country IS NULL OR country = '';
+
+-- Perfect.
+
+-- Dropping row_num
+
+ALTER TABLE layoffs_dup_removed
+DROP COLUMN row_num;
+
+SELECT COUNT(company)
+FROM layoffs_dup_removed;
+
+SELECT *
+FROM layoffs_dup_removed;
+-- Data Cleaning is now succcessfully done. 
